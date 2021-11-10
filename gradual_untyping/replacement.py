@@ -7,11 +7,11 @@ class Replacement(NamedTuple):
     end_lineno: int
     end_col_offset: int
     replace_with: str
-    mark: str | bool
+    mark: str
     include_mark: bool
 
     @classmethod
-    def from_node(cls, node, mark=False, delete_mark=False):
+    def from_node(cls, node, mark="", delete_mark=False):
         return cls(
             node.lineno - 1,
             node.col_offset,
