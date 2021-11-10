@@ -7,3 +7,6 @@ class Replacement(NamedTuple):
     end_lineno: int
     end_col_offset: int
     type: str
+
+    def __lt__(self, other):
+        return self[:2] < other[:2]
