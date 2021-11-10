@@ -19,10 +19,3 @@ def h(e):
     i: """
     multiline annotation
     """
-
-def a(
-  b: list[
-    list[list]
-  ]
-):
-  pass
