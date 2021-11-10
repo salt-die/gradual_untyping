@@ -66,7 +66,8 @@ def _find_annotations(code):
                 if anno := node.annotation:
                     annotations.append( Replacement.from_node(anno, ast.arg, code) )
 
-    return sorted(annotations, reverse=True)
+    annotations.sort(reverse=True)
+    return annotations
 
 def _replace_annotations(replacements, code):
     """
