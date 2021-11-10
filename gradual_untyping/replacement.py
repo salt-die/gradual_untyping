@@ -14,9 +14,9 @@ class Replacement(NamedTuple):
     @classmethod
     def from_node(cls, node, type, source):
         return cls(
-            node.lineno,
+            node.lineno - 1,
             node.col_offset,
-            node.end_lineno,
+            node.end_lineno - 1,
             node.end_col_offset,
             ast.get_source_segment(source, node),
             type,
