@@ -10,8 +10,7 @@ def untype(code):
     code_lines = code.splitlines()
 
     for lineno, col_offset, end_lineno, end_col_offset, replace_with, mark, delete_mark in replacements:
-        if mark:
-            col_offset -= code_lines[lineno][:col_offset][::-1].find(mark) + delete_mark
+        col_offset -= code_lines[lineno][:col_offset][::-1].find(mark) + delete_mark
 
         code_lines[lineno] = (
             f"{code_lines[lineno][:col_offset]}"
