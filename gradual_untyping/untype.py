@@ -30,7 +30,7 @@ def untype(code):
 def _add_pass_if_only_AnnAssigns(node):
     """
     Check for the case of a node body being only `AnnAssign`s. If
-    case found, the last AnnAssign will be flagged to be replaced with
+    case found, the last `AnnAssign` will be flagged to be replaced with
     "pass" instead of "".
     """
     for child in node.body:
@@ -41,7 +41,7 @@ def _add_pass_if_only_AnnAssigns(node):
 
 def _find_annotations(code):
     """
-    Yield all annotations from code (excepting AnnAssigns in NamedTuples and dataclasses).
+    Yield all annotations from code (excepting `AnnAssign`s in `NamedTuple`s and `dataclass`es).
     """
     tree = ast.parse(code)
 
