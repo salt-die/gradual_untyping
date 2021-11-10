@@ -92,9 +92,11 @@ def _replace_annotations(replacements, code):
             line = code_lines[lineno]
             code_lines[lineno] = f"{line[:col_offset]}{replace_with}{line[end_col_offset:]}"
         else:
-            last_line = code_lines[end_lineno][end_col_offset:]
-            last_line = "" if last_line.isspace() else last_line
-            code_lines[lineno] = f"{code_lines[lineno][:col_offset]}{replace_with}{last_line}"
+            code_lines[lineno] = (
+                f"{code_lines[lineno][:col_offset]}"
+                f"{replace_with}"
+                f"{code_lines[end_lineno][end_col_offset:].strip()}"
+            )
             code_lines[lineno + 1: end_lineno + 1] = []
 
         if not code_lines[lineno] or code_lines[lineno].isspace():
