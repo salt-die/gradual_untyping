@@ -9,8 +9,8 @@ def untype(code):
 
     code_lines = code.splitlines()
 
-    for lineno, col_offset, end_lineno, end_col_offset, replace_with, mark, delete_mark in replacements:
-        col_offset -= code_lines[lineno][:col_offset][::-1].find(mark) + delete_mark
+    for lineno, col_offset, end_lineno, end_col_offset, replace_with, mark in replacements:
+        col_offset -= code_lines[lineno][:col_offset][::-1].find(mark) + (mark == ":")
 
         code_lines[lineno] = (
             f"{code_lines[lineno][:col_offset]}"
@@ -50,7 +50,7 @@ def _find_annotations(code):
                 if not getattr(node, "is_meta_annotation", False):
                     if node.value:
                         node.annotation.replace_with = " "
-                        yield Replacement.from_node(node.annotation, mark=":", delete_mark=True)
+                        yield Replacement.from_node(node.annotation, mark=":")
                     else:
                         yield Replacement.from_node(node)
 
@@ -59,8 +59,8 @@ def _find_annotations(code):
                     node.body[0].replace_with = "pass"
 
                 if node.returns:
-                    yield Replacement.from_node(node.returns, mark=")", delete_mark=False)
+                    yield Replacement.from_node(node.returns, mark=")")
 
             case ast.arg():
                 if node.annotation:
-                    yield Replacement.from_node(node.annotation, mark=":", delete_mark=True)
+                    yield Replacement.from_node(node.annotation, mark=":")

@@ -8,10 +8,9 @@ class Replacement(NamedTuple):
     end_col_offset: int
     replace_with: str
     mark: str
-    include_mark: bool
 
     @classmethod
-    def from_node(cls, node, mark="", delete_mark=False):
+    def from_node(cls, node, mark=""):
         return cls(
             node.lineno - 1,
             node.col_offset,
@@ -19,5 +18,4 @@ class Replacement(NamedTuple):
             node.end_col_offset,
             getattr(node, "replace_with", ""),
             mark,
-            delete_mark,
         )
