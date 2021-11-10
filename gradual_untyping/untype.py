@@ -65,9 +65,9 @@ def _find_annotations(code):
             case ast.FunctionDef():
                 _add_pass_if_only_AnnAssigns(node)
 
-                if annotation := node.returns:
-                    yield Replacement.from_node(annotation, mark=")", delete_mark=False)
+                if node.returns:
+                    yield Replacement.from_node(node.returns, mark=")", delete_mark=False)
 
             case ast.arg():
-                if annotation := node.annotation:
-                    yield Replacement.from_node(annotation, mark=":", delete_mark=True)
+                if node.annotation:
+                    yield Replacement.from_node(node.annotation, mark=":", delete_mark=True)
