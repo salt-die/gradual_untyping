@@ -2,7 +2,8 @@ a: """
 multiline annotation
 """
 
-def f(b: """
+def f(
+    b: """
     multiline annotation
     """,
     c,
@@ -18,3 +19,10 @@ def h(e):
     i: """
     multiline annotation
     """
+
+def a(
+  b: list[
+    list[list]
+  ]
+):
+  pass
