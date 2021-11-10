@@ -51,7 +51,7 @@ def _find_annotations(code):
                 if not getattr(node, "is_meta_annotation", False):
                     yield Replacement.from_node(node)
 
-            case ast.FunctionDef():
+            case ast.FunctionDef() | ast.AsyncFunctionDef():
                 if all(isinstance(child, ast.AnnAssign) for child in node.body):
                     node.body[0].replace_with = "pass"
 
