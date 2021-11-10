@@ -2,6 +2,14 @@ import ast
 
 from .replacement import Replacement
 
+__all__ = "untype",
+
+def untype(code):
+    return _replace_annotations(
+        _find_annotations(code),
+        code,
+    )
+
 def _add_pass_if_only_AnnAssign(node):
     """
     Check for the case of a node body being only `AnnAssign` and, if found,
@@ -60,7 +68,41 @@ def _find_annotations(code):
 
     return sorted(annotations, reverse=True)
 
-# Remove unused imports
+def _replace_annotations(replacements, code):
+    """
+    Delete or replace annotations in code.
+    """
+    code_lines = code.splitlines()
 
-# Clear whitespace
+    for lineno, col_offset, end_lineno, end_col_offset, _, type, replace_with in replacements:
+        match type:
+            case ast.FunctionDef:
+                reverse = code_lines[lineno][:col_offset][::-1]
+                where_close_parens = reverse.find(")")
+                offset_adjust = len(reverse[:where_close_parens])
+                col_offset -= offset_adjust
+            case ast.arg:
+                reverse = code_lines[lineno][:col_offset][::-1]
+                where_colon = reverse.find(":")
+                offset_adjust = len(reverse[:where_colon + 1])
+                col_offset -= offset_adjust
 
+        if lineno == end_lineno:
+            line = code_lines[lineno]
+            code_lines[lineno] = f"{line[:col_offset]}{replace_with}{line[end_col_offset:]}"
+        else:
+            code_lines[lineno] = f"{code_lines[lineno][:col_offset]}{replace_with}"
+            code_lines[i: end_lineno] = []
+            code_lines[end_lineno] = code_lines[end_lineno][end_col_offset:]
+
+            if code_lines[end_lineno].ispace():
+                del code_lines[end_lineno]
+
+        if not code_lines[lineno] or code_lines[lineno].isspace():
+            del code_lines[lineno]
+
+    # EOF Newline.
+    if code_lines[-1]:
+        code_lines.append("")
+
+    return "\n".join(code_lines)
