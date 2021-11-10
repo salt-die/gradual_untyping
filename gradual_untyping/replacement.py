@@ -6,16 +6,18 @@ class Replacement(NamedTuple):
     col_offset: int
     end_lineno: int
     end_col_offset: int
-    type: type
     replace_with: str
+    mark: str | bool
+    include_mark: bool
 
     @classmethod
-    def from_node(cls, node, type, source):
+    def from_node(cls, node, mark=False, delete_mark=False):
         return cls(
             node.lineno - 1,
             node.col_offset,
             node.end_lineno - 1,
             node.end_col_offset,
-            type,
             getattr(node, "replace_with", ""),
+            mark,
+            delete_mark,
         )
