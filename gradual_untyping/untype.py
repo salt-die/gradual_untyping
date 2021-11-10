@@ -44,15 +44,19 @@ def _find_annotations(code):
                         if isinstance(child, ast.AnnAssign):
                             child.is_meta_annotation = True
                 else:
-                    if all(isinstance(child, ast.AnnAssign) for child in node.body):
+                    if all(isinstance(child, ast.AnnAssign) and not child.value for child in node.body):
                         node.body[0].replace_with = "pass"
 
             case ast.AnnAssign():
                 if not getattr(node, "is_meta_annotation", False):
-                    yield Replacement.from_node(node)
+                    if node.value:
+                        node.annotation.replace_with = " "
+                        yield Replacement.from_node(node.annotation, mark=":", delete_mark=True)
+                    else:
+                        yield Replacement.from_node(node)
 
             case ast.FunctionDef() | ast.AsyncFunctionDef():
-                if all(isinstance(child, ast.AnnAssign) for child in node.body):
+                if all(isinstance(child, ast.AnnAssign) and not child.value for child in node.body):
                     node.body[0].replace_with = "pass"
 
                 if node.returns:
