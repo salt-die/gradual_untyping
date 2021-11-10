@@ -27,18 +27,6 @@ def untype(code):
 
     return "\n".join(code_lines)
 
-def _add_pass_if_only_AnnAssigns(node):
-    """
-    Check for the case of a node body being only `AnnAssign`s. If
-    case found, the last `AnnAssign` will be flagged to be replaced with
-    `"pass"` instead of `""`.
-    """
-    for child in node.body:
-        if not isinstance(child, ast.AnnAssign):
-            break
-    else:
-        child.replace_with = "pass"
-
 def _find_annotations(code):
     """
     Yield all annotations from code (excepting `AnnAssign`s in `NamedTuple`s and `dataclass`es).
@@ -56,14 +44,16 @@ def _find_annotations(code):
                         if isinstance(child, ast.AnnAssign):
                             child.is_meta_annotation = True
                 else:
-                    _add_pass_if_only_AnnAssigns(node)
+                    if all(isinstance(child, ast.AnnAssign) for child in node.body):
+                        node.body[0].replace_with = "pass"
 
             case ast.AnnAssign():
                 if not getattr(node, "is_meta_annotation", False):
                     yield Replacement.from_node(node)
 
             case ast.FunctionDef():
-                _add_pass_if_only_AnnAssigns(node)
+                if all(isinstance(child, ast.AnnAssign) for child in node.body):
+                    node.body[0].replace_with = "pass"
 
                 if node.returns:
                     yield Replacement.from_node(node.returns, mark=")", delete_mark=False)
