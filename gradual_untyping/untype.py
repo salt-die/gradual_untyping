@@ -12,9 +12,9 @@ def untype(code):
 
 def _add_pass_if_only_AnnAssign(node):
     """
-    Check for the case of a node body being only `AnnAssign` and, if found,
-    add an instruction for the last replacement to replace with `"pass"`
-    instead of `""`.
+    Check for the case of a node body being only `AnnAssign`s. If
+    case found, the last AnnAssign will be flagged to be replaced with
+    "pass" instead of "".
     """
     for child in node.body:
         if not isinstance(child, ast.AnnAssign):

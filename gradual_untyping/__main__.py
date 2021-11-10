@@ -1,9 +1,8 @@
 """
 Temp file for testing purposes.
 """
-
 from pathlib import Path
-from .untyping import untype
+from .untype import untype
 
 EXAMPLES_PATH = Path("code_examples")
 CODE_PATH = EXAMPLES_PATH / "example_1.py"

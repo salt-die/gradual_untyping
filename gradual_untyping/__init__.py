@@ -1,1 +1,3 @@
-from .untyping import untype
+from .untype import untype
+
+__all__ = "untype",
