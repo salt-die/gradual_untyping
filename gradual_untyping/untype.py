@@ -5,77 +5,8 @@ from .replacement import Replacement
 __all__ = "untype",
 
 def untype(code):
-    return _replace_annotations(
-        _find_annotations(code),
-        code,
-    )
+    replacements = sorted(_find_annotations(code), reverse=True)
 
-def _add_pass_if_only_AnnAssign(node):
-    """
-    Check for the case of a node body being only `AnnAssign`s. If
-    case found, the last AnnAssign will be flagged to be replaced with
-    "pass" instead of "".
-    """
-    for child in node.body:
-        if not isinstance(child, ast.AnnAssign):
-            break
-    else:
-        child.replace_with = "pass"
-
-def _find_annotations(code):
-    """
-    Find all annotations (excepting AnnAssigns in NamedTuples and dataclasses).
-    """
-    tree = ast.parse(code)
-
-    replacements = [ ]
-
-    for node in ast.walk(tree):
-        match node:
-            case ast.ClassDef():
-                if (
-                    any(
-                        decorator.id == "dataclass"
-                        for decorator in node.decorator_list
-                    )
-                    or any(
-                        base.id == "NamedTuple"
-                        for base in node.bases
-                    )
-                ):
-                    for child in ast.iter_child_nodes(node):
-                        if isinstance(child, ast.AnnAssign):
-                            child.is_annotation = False
-                else:
-                    _add_pass_if_only_AnnAssign(node)
-
-            case ast.AnnAssign():
-                if getattr(node, "is_annotation", True):
-                    replacements.append(
-                        Replacement.from_node(node)
-                    )
-
-            case ast.FunctionDef():
-                _add_pass_if_only_AnnAssign(node)
-
-                if anno := node.returns:
-                    replacements.append(
-                       Replacement.from_node(anno, mark=")", delete_mark=False)
-                    )
-
-            case ast.arg():
-                if anno := node.annotation:
-                    replacements.append(
-                       Replacement.from_node(anno, mark=":", delete_mark=True)
-                    )
-
-    replacements.sort(reverse=True)
-    return replacements
-
-def _replace_annotations(replacements, code):
-    """
-    Delete or replace annotations in code.
-    """
     code_lines = code.splitlines()
 
     for lineno, col_offset, end_lineno, end_col_offset, replace_with, mark, delete_mark in replacements:
@@ -95,3 +26,48 @@ def _replace_annotations(replacements, code):
         code_lines.append("")
 
     return "\n".join(code_lines)
+
+def _add_pass_if_only_AnnAssigns(node):
+    """
+    Check for the case of a node body being only `AnnAssign`s. If
+    case found, the last AnnAssign will be flagged to be replaced with
+    "pass" instead of "".
+    """
+    for child in node.body:
+        if not isinstance(child, ast.AnnAssign):
+            break
+    else:
+        child.replace_with = "pass"
+
+def _find_annotations(code):
+    """
+    Yield all annotations from code (excepting AnnAssigns in NamedTuples and dataclasses).
+    """
+    tree = ast.parse(code)
+
+    for node in ast.walk(tree):
+        match node:
+            case ast.ClassDef():
+                if (
+                    any(decorator.id == "dataclass" for decorator in node.decorator_list)
+                    or any(base.id == "NamedTuple" for base in node.bases)
+                ):
+                    for child in ast.iter_child_nodes(node):
+                        if isinstance(child, ast.AnnAssign):
+                            child.is_annotation = False
+                else:
+                    _add_pass_if_only_AnnAssigns(node)
+
+            case ast.AnnAssign():
+                if getattr(node, "is_annotation", True):
+                    yield Replacement.from_node(node)
+
+            case ast.FunctionDef():
+                _add_pass_if_only_AnnAssigns(node)
+
+                if anno := node.returns:
+                    yield Replacement.from_node(anno, mark=")", delete_mark=False)
+
+            case ast.arg():
+                if anno := node.annotation:
+                    yield Replacement.from_node(anno, mark=":", delete_mark=True)
