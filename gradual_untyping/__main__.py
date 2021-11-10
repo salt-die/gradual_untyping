@@ -4,7 +4,7 @@ Temp file for testing purposes.
 from pathlib import Path
 from .untype import untype
 
-NEXAMPLES = 2
+NEXAMPLES = 3
 EXAMPLES_PATH = Path("code_examples")
 
 for n in range(1, NEXAMPLES + 1):
