@@ -31,7 +31,7 @@ def _add_pass_if_only_AnnAssigns(node):
     """
     Check for the case of a node body being only `AnnAssign`s. If
     case found, the last `AnnAssign` will be flagged to be replaced with
-    "pass" instead of "".
+    `"pass"` instead of `""`.
     """
     for child in node.body:
         if not isinstance(child, ast.AnnAssign):
@@ -54,20 +54,20 @@ def _find_annotations(code):
                 ):
                     for child in ast.iter_child_nodes(node):
                         if isinstance(child, ast.AnnAssign):
-                            child.is_annotation = False
+                            child.is_meta_annotation = True
                 else:
                     _add_pass_if_only_AnnAssigns(node)
 
             case ast.AnnAssign():
-                if getattr(node, "is_annotation", True):
+                if not getattr(node, "is_meta_annotation", False):
                     yield Replacement.from_node(node)
 
             case ast.FunctionDef():
                 _add_pass_if_only_AnnAssigns(node)
 
-                if anno := node.returns:
-                    yield Replacement.from_node(anno, mark=")", delete_mark=False)
+                if annotation := node.returns:
+                    yield Replacement.from_node(annotation, mark=")", delete_mark=False)
 
             case ast.arg():
-                if anno := node.annotation:
-                    yield Replacement.from_node(anno, mark=":", delete_mark=True)
+                if annotation := node.annotation:
+                    yield Replacement.from_node(annotation, mark=":", delete_mark=True)
