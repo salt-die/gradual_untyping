@@ -74,7 +74,7 @@ def _replace_annotations(replacements, code):
     """
     code_lines = code.splitlines()
 
-    for lineno, col_offset, end_lineno, end_col_offset, _, type, replace_with in replacements:
+    for lineno, col_offset, end_lineno, end_col_offset, type, replace_with in replacements:
         match type:
             case ast.FunctionDef:
                 reverse = code_lines[lineno][:col_offset][::-1]
