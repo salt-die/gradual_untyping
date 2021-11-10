@@ -28,46 +28,49 @@ def _find_annotations(code):
     """
     tree = ast.parse(code)
 
-    annotations = [ ]
+    replacements = [ ]
 
     for node in ast.walk(tree):
         match node:
             case ast.ClassDef():
-                ignore_ann_assign = False
-
-                for decorator in node.decorator_list:
-                    if decorator.id == "dataclass":
-                        ignore_ann_assign = True
-                        break
-                else:
-                    for base in node.bases:
-                        if base.id == "NamedTuple":
-                            ignore_ann_assign = True
-                        break
-
-                if ignore_ann_assign:
+                if (
+                    any(
+                        decorator.id == "dataclass"
+                        for decorator in node.decorator_list
+                    )
+                    or any(
+                        base.id == "NamedTuple"
+                        for base in node.bases
+                    )
+                ):
                     for child in ast.iter_child_nodes(node):
                         if isinstance(child, ast.AnnAssign):
-                            child.ignore_me = True
+                            child.is_annotation = False
                 else:
                     _add_pass_if_only_AnnAssign(node)
 
             case ast.AnnAssign():
-                if not getattr(node, "ignore_me", False):
-                    annotations.append( Replacement.from_node(node, ast.AnnAssign, code) )
+                if getattr(node, "is_annotation", True):
+                    replacements.append(
+                        Replacement.from_node(node)
+                    )
 
             case ast.FunctionDef():
                 _add_pass_if_only_AnnAssign(node)
 
                 if anno := node.returns:
-                    annotations.append( Replacement.from_node(anno, ast.FunctionDef, code) )
+                    replacements.append(
+                       Replacement.from_node(anno, mark=")", delete_mark=False)
+                    )
 
             case ast.arg():
                 if anno := node.annotation:
-                    annotations.append( Replacement.from_node(anno, ast.arg, code) )
+                    replacements.append(
+                       Replacement.from_node(anno, mark=":", delete_mark=True)
+                    )
 
-    annotations.sort(reverse=True)
-    return annotations
+    replacements.sort(reverse=True)
+    return replacements
 
 def _replace_annotations(replacements, code):
     """
@@ -75,32 +78,17 @@ def _replace_annotations(replacements, code):
     """
     code_lines = code.splitlines()
 
-    for lineno, col_offset, end_lineno, end_col_offset, type, replace_with in replacements:
-        match type:
-            case ast.FunctionDef:
-                reverse = code_lines[lineno][:col_offset][::-1]
-                where_close_parens = reverse.find(")")
-                offset_adjust = len(reverse[:where_close_parens])
-                col_offset -= offset_adjust
-            case ast.arg:
-                reverse = code_lines[lineno][:col_offset][::-1]
-                where_colon = reverse.find(":")
-                offset_adjust = len(reverse[:where_colon + 1])
-                col_offset -= offset_adjust
+    for lineno, col_offset, end_lineno, end_col_offset, replace_with, mark, delete_mark in replacements:
+        if mark:
+            col_offset -= code_lines[lineno][:col_offset][::-1].find(mark) + delete_mark
 
-        if lineno == end_lineno:
-            line = code_lines[lineno]
-            code_lines[lineno] = f"{line[:col_offset]}{replace_with}{line[end_col_offset:]}"
-        else:
-            code_lines[lineno] = (
-                f"{code_lines[lineno][:col_offset]}"
-                f"{replace_with}"
-                f"{code_lines[end_lineno][end_col_offset:].strip()}"
-            )
-            code_lines[lineno + 1: end_lineno + 1] = []
+        code_lines[lineno] = (
+            f"{code_lines[lineno][:col_offset]}"
+            f"{replace_with}"
+            f"{code_lines[end_lineno][end_col_offset:].strip()}"
+        ).rstrip()
 
-        if not code_lines[lineno] or code_lines[lineno].isspace():
-            del code_lines[lineno]
+        code_lines[lineno + bool(code_lines[lineno]): end_lineno + 1] = [ ]
 
     # EOF Newline.
     if code_lines[-1]:
